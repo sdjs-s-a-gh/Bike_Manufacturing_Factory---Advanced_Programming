@@ -30,3 +30,8 @@ class OutputBin:
 
     def increment_component_count(self, component) -> None:
         self.__components_dict[component] += 1
+
+    # on production of a bike
+    def decrement_component_count(self, components: list) -> None:
+        for component in components:
+            self.__components_dict[component] -= 1
