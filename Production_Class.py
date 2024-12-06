@@ -1,4 +1,4 @@
-from Bike_Class import Bike
+from Bike_Class import Bike, SportBike
 from Customer_Class import *
 from Order_Class import Order
 
@@ -7,9 +7,13 @@ class Production:
     def __init__(self, order: Order):
         self.__order = order
         self.__bike_components: list = order.get_bike().get_components()
+        output_bin.add_production(self)
 
     def get_components(self) -> list:
         return self.__bike_components
+
+    def get_length_components(self) -> int:
+        return len(self.__bike_components)
 
     def get_details(self) -> list:
         details = self.__order.get_details()
@@ -63,7 +67,7 @@ class OutputBin:
 
         #  Finding the production with the largest component count
         #  Used a lambda as it saves me writing a separate component length function
-        largest_production = max(self.__productions, key=lambda produc: len(produc.get_components()))
+        largest_production = max(self.__productions, key=lambda production_bike: len(production_bike.get_components()))
 
         self.__components = largest_production.get_components()
 
@@ -90,16 +94,22 @@ customer = Customer("Name", contact_info, deli)
 
 bike = Bike("Big", "Blue", 12.4, "Standard", "Standard", "LED")
 
+bike2 = SportBike("Big", "Blue", 12.4, "Standard", "Standard", True)
+
 date = "12/12/2024"
 
 order = Order(bike, customer, date)
+order2 = Order(bike2, customer, date)
 
 output_bin = OutputBin()
 
 production = Production(order)
+production2 = Production(order2)
+
 print(production.get_components())
 print(production.get_details())
 
 output_bin.add_production(production)
-print(output_bin.get_components_list())
-print(output_bin.get_components_dict())
+output_bin.add_production(production2)
+print(f"OutputBin Components List: {output_bin.get_components_list()}")
+print(f"OutputBin Components Dict: {output_bin.get_components_dict()}")

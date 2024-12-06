@@ -25,6 +25,9 @@ class ContactInformation:
 
         Raises: ValueError: If the phone number entered is not equal to 11 digits long or if the first digit is not 0
         (zero).
+
+        Example:
+            02345678911
         """
 
         if len(phone_number) != 11 and phone_number[0] != 0:

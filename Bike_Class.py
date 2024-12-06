@@ -11,7 +11,7 @@ class Bike:
 
     def get_components(self) -> list:
         components = [
-            self.__colour, self.__wheel_size, self.__gear_type, self.__brake_type, self.__light_option
+            "Bicycle Frame", "Pairs of Wheels", "Gears", "Brakes", "Lights"
         ]
 
         return components
@@ -26,10 +26,21 @@ class Bike:
 
 
 class SportBike(Bike):
-    def __init__(self, size: str, colour: str, wheel_size: float, gear_type: str, light_option: str):
-        super().__init__(size, colour, wheel_size, gear_type, "Brake", light_option)
+    def __init__(self, size: str, colour: str, wheel_size: float, gear_type: str, light_option: str, drink_holder: bool):
+        super().__init__(size, colour, wheel_size, gear_type, "Premium", light_option)
         self._model = "Sport"
+        self.__drink_holder = drink_holder
 
+    def get_components(self) -> list:
+        components = super().get_components()
+        if self.__drink_holder:
+            components.append("Drink Holder")
+        return components
+
+    def get_details(self) -> list:
+        details = super().get_details()
+        details.append(self.__drink_holder)
+        return details
 
 
 #sport = SportBike("Big", "Blue", 1.4, "Standard", "LED")
