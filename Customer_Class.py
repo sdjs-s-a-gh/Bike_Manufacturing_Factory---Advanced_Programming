@@ -31,7 +31,7 @@ class ContactInformation:
         """
 
         if len(phone_number) != 11 and phone_number[0] != 0:
-            raise ValueError("The phone number must be at 11 digits long and the fist digit must also be 0 (zero)")
+            raise ValueError("The phone number must be at 11 digits long and the first digit must also be 0 (zero)")
         # else, the number is valid
         return phone_number
 

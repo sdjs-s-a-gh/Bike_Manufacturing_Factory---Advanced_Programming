@@ -12,9 +12,6 @@ class Production:
     def get_components(self) -> list:
         return self.__bike_components
 
-    def get_length_components(self) -> int:
-        return len(self.__bike_components)
-
     def get_details(self) -> list:
         details = self.__order.get_details()
         return details
@@ -53,8 +50,9 @@ class InputBin:
 class OutputBin:
     def __init__(self):
         self.__productions: list[Production] = []   # initially, there is nothing in the output bin
-        self.__components: list = []  # the list of components
-        self.__components_dict: dict = {}   # dictionary of components
+        # All possible components
+        self.__components: list = ["Bicycle Frame", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Drink Holder"]
+        self.__components_dict: dict = {component: 0 for component in self.__components}   # dictionary of components
 
     def get_components_list(self) -> list:
         return self.__components
@@ -65,19 +63,8 @@ class OutputBin:
     def add_production(self, production: Production):
         self.__productions.append(production)
 
-        #  Finding the production with the largest component count
-        #  Used a lambda as it saves me writing a separate component length function
-        largest_production = max(self.__productions, key=lambda production_bike: len(production_bike.get_components()))
-
-        self.__components = largest_production.get_components()
-
-        # Dictionary comprehension where each component is a key.
-        self.__components_dict = {component: 0 for component in self.__components}
-
-
     def remove_production(self, production: Production):
-        pass
-
+        self.__productions.remove(production)
 
     def increment_component_count(self, component) -> None:
         self.__components_dict[component] += 1
@@ -88,28 +75,32 @@ class OutputBin:
             self.__components_dict[component] -= 1
 
 
-contact_info = ContactInformation("07774808256", "johndoe@gmail.com")
-deli = DeliveryAddress("123", "Street", "County", "City", "ZH1DJF")
-customer = Customer("Name", contact_info, deli)
+#contact_info = ContactInformation("07774808256", "johndoe@gmail.com")
+#deli = DeliveryAddress("123", "Street", "County", "City", "ZH1DJF")
+#customer = Customer("Name", contact_info, deli)
 
-bike = Bike("Big", "Blue", 12.4, "Standard", "Standard", "LED")
+#bike = Bike("Big", "Blue", 12.4, "Standard", "Standard", "LED")
 
-bike2 = SportBike("Big", "Blue", 12.4, "Standard", "Standard", True)
+#bike2 = SportBike("Big", "Blue", 12.4, "Standard", "Standard", True)
 
-date = "12/12/2024"
+#date = "12/12/2024"
 
-order = Order(bike, customer, date)
-order2 = Order(bike2, customer, date)
+#order = Order(bike, customer, date)
+#order2 = Order(bike2, customer, date)
 
 output_bin = OutputBin()
 
-production = Production(order)
-production2 = Production(order2)
+#production = Production(order)
+#production2 = Production(order2)
 
-print(production.get_components())
-print(production.get_details())
+#print(production.get_components())
+#print(production.get_details())
 
-output_bin.add_production(production)
-output_bin.add_production(production2)
-print(f"OutputBin Components List: {output_bin.get_components_list()}")
-print(f"OutputBin Components Dict: {output_bin.get_components_dict()}")
+#output_bin.add_production(production)
+#output_bin.add_production(production2)
+#print(f"OutputBin Components List: {output_bin.get_components_list()}")
+#print(f"OutputBin Components Dict: {output_bin.get_components_dict()}")
+
+# shared components
+# for component in components
+#   button is interactable at all
