@@ -4,6 +4,10 @@ class Customer:
         self.__contact_information: ContactInformation = contact_information
         self.__delivery_address: DeliveryAddress = delivery_address
 
+    def __str__(self):
+        return (f"\t Full Name: {self.__name} \n\t Contact Information: {self.__contact_information}"
+                f"\n\t Delivery Address: {self.__delivery_address}")
+
 
 class ContactInformation:
     def __init__(self, phone_number: str, email_address: str):
@@ -31,7 +35,7 @@ class ContactInformation:
         """
 
         if len(phone_number) != 11 and phone_number[0] != 0:
-            raise ValueError("The phone number must be at 11 digits long and the first digit must also be 0 (zero)")
+            raise ValueError("The phone number must be at least 11 digits long")
         # else, the number is valid
         return phone_number
 
@@ -55,25 +59,24 @@ class ContactInformation:
             johndoe@gmail.co.uk
         """
         # Without importing regex
-        occurrence = {"@": 0, ".com": 0, ".co.uk": 0}  # "." may appear multiple times
-        for char in email_address:
-            if char in occurrence:
-                occurrence[char] += 1
 
         # Remove all whitespaces (leading, trailing and internal) if there are any
         stripped_email = email_address.replace(" ", "")
 
-        if occurrence["@"] != 1 and (occurrence[".com"] != 1 or occurrence[".co.uk"] != 1):
+        if "@" not in stripped_email or not (".com" in stripped_email or ".co.uk" in stripped_email):
             raise ValueError("The email address must contain an at sign (@) and a domain name (either .com or .co.uk).)")
         elif stripped_email[len(stripped_email)-4:] != ".com" and stripped_email[len(stripped_email)-6:] != ".co.uk":
             raise ValueError("The domain name must be at the very end of the email.")
         else:
             return stripped_email
 
+    def __str__(self):
+        return f"\n\t\t Phone Number: {self.__phone_number},\n\t\t Email Address: {self.__email_address}"
+
 
 class DeliveryAddress:
     def __init__(self, house_number: str, street: str, county: str, town_city: str, postcode: str):
-        self.__house_number: str = house_number  # they may live in an apartment; for example: 123a
+        self.__house_number: str = house_number  # they may live in an apartment; for example: 123a. Or a named house.
         self.__street: str = street
         self.__county: str = county
         self.__town_city: str = town_city
@@ -106,3 +109,8 @@ class DeliveryAddress:
                              "9 = optional number")
         # else
         return stripped_postcode
+
+    def __str__(self):
+        return (f"\n\t\t House Number/Title: {self.__house_number}, \n\t\t Street: {self.__street},"
+                f" \n\t\t County: {self.__county}, \n\t\t Town/City: {self.__town_city},"
+                f" \n\t\t Postcode: {self.__postcode}")

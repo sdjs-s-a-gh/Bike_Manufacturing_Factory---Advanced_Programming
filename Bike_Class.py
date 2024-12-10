@@ -11,7 +11,7 @@ class Bike:
 
     def get_components(self) -> list:
         components = [
-            "Bicycle Frame", "Pairs of Wheels", "Gears", "Brakes", "Lights"
+            "Front Fork", "Pedals", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"
         ]
 
         return components
@@ -23,6 +23,11 @@ class Bike:
         ]
 
         return details
+
+    def __str__(self):
+        return (f"\t Model: {self._model}, \n\t Size: {self.__size}, \n\t Colour: {self.__colour},"
+                f"\n\t Wheel Size: {self.__wheel_size}, \n\t Gear Type: {self.__gear_type},"
+                f"\n\t Brake Type: {self.__brake_type}, \n\t Light Option: {self.__light_option}")
 
 
 class SportBike(Bike):
@@ -42,6 +47,6 @@ class SportBike(Bike):
         details.append(self.__drink_holder)
         return details
 
-
-#sport = SportBike("Big", "Blue", 1.4, "Standard", "LED")
-#print(sport.get_components())
+    def __str__(self):
+        og_string = super().__str__()
+        return f"{og_string}, \n\t Drink Holder: {self.__drink_holder}"

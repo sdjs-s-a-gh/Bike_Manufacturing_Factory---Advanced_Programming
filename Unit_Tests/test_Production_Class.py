@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from Customer_Class import Customer, ContactInformation, DeliveryAddress
-from Production_Class import Production, output_bin # I need a specific instance of OutputBin to test
+from Production_Class import Production, inventory   # I need a specific instance of Inventory to test
 from Bike_Class import *
 from Order_Class import Order
 
@@ -23,26 +23,31 @@ class TestProduction(TestCase):
         order = Order(bike=bike, customer=customer, date="06/12/2024")
         self.production = Production(order=order)
 
-    # As the tests are seemingly executed in alphabetical order, the test initialisation method name contains
-    # the number one because the method needs to be run before test_get_components_multiple
     def test_initialisation(self):
-        # Test all the components in the production bike are in the output bin.
+        # Test all the components in the production bike are valid by being in the Inventory.
         for component in self.production.get_components():
-            self.assertIn(component, output_bin.get_components_list())
+            self.assertIn(component, inventory.get_components_list())
 
         self.assertEqual(self.production.can_produce_bike(), False)
 
     def test_get_components(self):
         actual = self.production.get_components()
-        expected = ["Bicycle Frame", "Pairs of Wheels", "Gears", "Brakes", "Lights"]
+        expected = ["Front Fork", "Pedals", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"]
         self.assertEqual(actual, expected)
 
     def test_production(self):
+        """
+        Testing that a bike can be produced by fulfilling its component requirements. Once produced, then checking
+        that the inventory successfully cleans up by decrementing each component used by 1.
+        """
         for component in self.production.get_components():
-            output_bin.increment_component_count(component)
+            inventory.increment_component_count(component)
         self.assertEqual(self.production.can_produce_bike(), True)
 
-        # Test the production successfully cleans up by decrementing each component used by 1.
-        output_bin_dict = output_bin.get_components_dict()
+        # Produce the bike, decrementing each component used by 1
+        self.production.produce_bike()
+
+        # Test the production successfully cleans up
+        inventory_dict = inventory.get_components_dict()
         for component in self.production.get_components():
-            self.assertEqual(output_bin_dict[component], 0)
+            self.assertEqual(inventory_dict[component], 0)

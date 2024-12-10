@@ -5,20 +5,20 @@ class TestBike(TestCase):
     def setUp(self):
         """Create a sample (standard) Bike class before each test."""
         self.bike = Bike(
-            size="Big", colour="Blue", wheel_size=12.6, gear_type="Standard", brake_type="Rim", light_option="Standard"
+            size="Big", colour="Blue", wheel_size=26, gear_type="Standard", brake_type="Rim", light_option="Standard"
         )
 
     def test_initialisation_and_get_details(self):
         """Test if the Bike initialises with the correct attributes by using the get_details() method"""
         actual: list = self.bike.get_details()
-        expected: list = ["Standard", "Big", "Blue", 12.6 , "Standard", "Rim", "Standard"]    # [0] = Model
+        expected: list = ["Standard", "Big", "Blue", 26, "Standard", "Rim", "Standard"]    # [0] = Model
         self.assertEqual(expected, actual)
 
     def test_get_components(self):
         """Test if the Bike instance correctly displays the types of components"""
         # Normal Data
         actual: list[str] = self.bike.get_components()
-        expected: list[str] = ["Bicycle Frame", "Pairs of Wheels", "Gears", "Brakes", "Lights"]
+        expected: list[str] = ["Bicycle Frame", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"]
         self.assertEqual(expected, actual)
 
         # Erroneous Data

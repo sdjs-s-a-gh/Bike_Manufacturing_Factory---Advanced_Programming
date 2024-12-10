@@ -14,3 +14,7 @@ class Order:
 
     def get_bike(self) -> Bike:
         return self.__bike
+
+    def __str__(self):
+        return (f"Bike Details: \n {self.__bike} \n\n Customer Details: \n {self.__customer}\n\n"
+                f"Date Details: \n\t Date Ordered: {self.__date}")

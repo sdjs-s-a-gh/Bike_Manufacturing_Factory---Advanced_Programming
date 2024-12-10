@@ -36,7 +36,7 @@ class TestContactInformation(TestCase):
         # Normal - raises errors
         with self.assertRaises(ValueError):
             ContactInformation(phone_number="0234567891", email_address="johndoe.com"),
-            ContactInformation(phone_number="02345678911", email_address= "johndoe@gmail.co"),
+            ContactInformation(phone_number="02345678911", email_address="johndoe@gmail.co"),
             ContactInformation(phone_number="02345678911", email_address=".com@gmail.co"),
             ContactInformation(phone_number="02345678911", email_address=".uk@gmail.co")
 
