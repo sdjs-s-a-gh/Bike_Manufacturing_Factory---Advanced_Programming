@@ -59,7 +59,9 @@ class Inventory:
             )
         # Sort the components Alphabetically, as sets display items randomly (the result of hashing)
         self.__components: list = sorted(all_components)
-        self.__components_dict: dict = {component: 5 for component in self.__components}   # dictionary of components
+
+        self.__components_dict: dict = {component: 0 for component in self.__components}   # dictionary of components
+
         # Initialise the contents of the production_bin (the part transferred between each assembly station)
         self.__production_bin = {component: 0 for component in self.__components_dict.keys()}
 
@@ -137,19 +139,34 @@ class History:
 # In-house created Component. i.e. created from existing parts and not imported like lights or seats, etc.
 # Abstract Class
 class Component:
-    def __init__(self, input_components: list[str], output_component: list[str]):
+    def __init__(self, input_components: list[str], output_component: list[str], decrement_production_bin: bool=False):
         self._input = input_components
         self._output = output_component
+        self.decrement_production_bin = decrement_production_bin
 
     def create(self) -> None:
-        # Remove the input(s) from the inventory
-        for component in self._input:
-            inventory.decrement_component_count(component)
+        index = 0
+        try:
+            # Remove the input(s) from the inventory
+            for component in self._input:
+                inventory.decrement_component_count(component)
+                index += 1
+        except ValueError as x:
+            # Rollback the change (there is at maximum two inputs, so if an error occurs on first one, nothing happens;
+            # whereas if an error occurs on the second one, the first component needs to be reversed.
+            if index == 1:
+                inventory.increment_component_count(self._input[index - 1])
+            raise x
 
         # Add the output to the inventory (to showcase amount in stock) and the production bin
-            inventory.increment_component_count(component)
-            inventory.increment_production_bin_component_count(component)
+        inventory.increment_component_count(self._output[0])
+        inventory.increment_production_bin_component_count(self._output[0])
         # When the bike has been created, the amount in the inventory and the production bin will be removed.
+
+        # Only used for the subclasses FrontFork and Frame, removing copy and pasted code between the two.
+        if self.decrement_production_bin:
+            for component in self._input:
+                inventory.decrement_production_bin_component_count(component)
 
     def __str__(self):
         return f"{self._output[0]}"
@@ -160,9 +177,16 @@ class Fork(Component):
         super().__init__(input_components=["Tubular Steel"], output_component=["Forks"])
 
 
+class FrontFork(Component):
+    def __init__(self):
+        super().__init__(["Frames", "Forks"], ["Front Fork"], True)
+
+
 class PaintedPart(Component):
     def __init__(self):
-        super().__init__(input_components=["Frames", "Forks"], output_component=["Painted Parts"])
+        super().__init__(
+            input_components=["Frames", "Forks"], output_component=["Painted Parts"], decrement_production_bin=True
+        )
 
 
 class Frame(Component):
@@ -177,6 +201,7 @@ class Frame(Component):
         inventory.decrement_component_count(self._input[0], self._amount)
         inventory.increment_component_count(self._output[0])
         inventory.increment_production_bin_component_count(self._output[0])
+
 
 class SmallFrame(Frame):
     def __init__(self, model: str):
@@ -199,9 +224,15 @@ class ExtraLargeFrame(Frame):
         super().__init__(4, model)
 
 
-class FrontFork(Component):
-    def __init__(self):
-        super().__init__(["Frames", "Forks"], ["Front Fork"])
+class ExternalComponent:
+    def __init__(self, component: str):
+        self.components = component
+
+    def add(self) -> None:
+        inventory.increment_production_bin_component_count(self.components)
+
+    def __str__(self) -> str:
+        return f"{self.components}"
 
 
 inventory = Inventory()

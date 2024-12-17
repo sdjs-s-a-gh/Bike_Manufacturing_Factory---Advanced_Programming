@@ -1,15 +1,16 @@
 import sys
+from functools import partial
 
 from Bike_Class import *
 from Customer_Class import *
 from Production_Class import *
 
-from PySide6.QtCore import Qt, QRegularExpression, QDate, QAbstractTableModel, QModelIndex, QRect
+from PySide6.QtCore import Qt, QRegularExpression, QDate, QAbstractTableModel, QModelIndex, QRect, QEvent
 from PySide6.QtGui import *
 from PySide6.QtWidgets import (
     QApplication, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenuBar, QPushButton, QVBoxLayout, QWidget, QComboBox,
     QMessageBox, QDateEdit, QTableView, QStyledItemDelegate, QAbstractItemView, QStyleOptionViewItem, QInputDialog,
-    QGridLayout
+    QGridLayout, QStyle, QStyleOptionButton
 )
 
 from Order_Class import Order
@@ -46,20 +47,34 @@ class MainWindow(QMainWindow):
         btn_brake_addition = QPushButton("Brake Addition")
         btn_light_addition = QPushButton("Light Addition")
         btn_seat_addition = QPushButton("Seat Addition")
+        btn_handlebar_addition = QPushButton("Handlebar Addition")
         btn_drink_holder_addition = QPushButton("Drink Holder Addition")
         btn_front_rack_addition = QPushButton("Front Rack Addition")
         btn_rear_rack_addition = QPushButton("Rear Rack Addition")
         btn_mudflaps_addition = QPushButton("Mudflaps Addition")
         btn_child_seat_addition = QPushButton("Child Seat Addition")
+        btn_pass = QPushButton("Pass")
 
         self.assembly_line_buttons = [
-            btn_frame_assembly, btn_fork_assembly, btn_front_fork_assembly, btn_painted_parts, btn_pedal_addition,
-            btn_wheel_addition, btn_gear_addition, btn_brake_addition, btn_light_addition, btn_seat_addition,
-            btn_drink_holder_addition, btn_front_rack_addition, btn_rear_rack_addition, btn_mudflaps_addition,
-            btn_child_seat_addition
+            btn_frame_assembly, btn_fork_assembly, btn_pass, btn_front_fork_assembly, btn_painted_parts,
+            btn_pedal_addition, btn_wheel_addition, btn_gear_addition, btn_brake_addition, btn_light_addition,
+            btn_seat_addition, btn_handlebar_addition, btn_drink_holder_addition, btn_front_rack_addition,
+            btn_rear_rack_addition, btn_mudflaps_addition, btn_child_seat_addition
         ]
 
+        self.internal_component_mapping: dict[QPushButton, str] = {
+            btn_frame_assembly: "Frames", btn_fork_assembly: "Forks",
+            btn_front_fork_assembly: "Front Fork", btn_painted_parts: "Painted Parts"
+        }
+
         # -- Bike Status / Production Table
+        self.lbl_production_bin_component_status = QLabel("")
+        self.lbl_production_bin_component_status.setWordWrap(True)
+        self.lbl_pass_btn_hint = QLabel(
+            "Please press the Pass button when the production bin reaches an additional component that the "
+            "bike(s) do not contain."
+        )
+        self.lbl_pass_btn_hint.setWordWrap(True)
         lbl_bike_status = QLabel("Bike Status / Production Bin")
         lbl_bike_status.setFont(sub_header_typography)
         self.lbl_production = QLabel("There are no bikes currently in production.")
@@ -68,8 +83,10 @@ class MainWindow(QMainWindow):
         lbl_inventory = QLabel("Inventory")
         lbl_inventory.setFont(header_typography)
         btn_auto_restock = QPushButton("Auto Restock")
-        lbl_restock_hint = QLabel("To manually restock, please select a row from the table. Once presented with a"
-                                  " dialog box, enter a specified number to restock.")
+        lbl_restock_hint = QLabel(
+            "To manually restock a specific component, please select their associated row from the table."
+            " Once presented with a dialog box, enter a specified number to restock."
+        )
         lbl_restock_hint.setWordWrap(True)
 
         # - Create Models for the Production and Inventory table
@@ -107,24 +124,42 @@ class MainWindow(QMainWindow):
         fork = Fork()
         front_fork = FrontFork()
         painted_part = PaintedPart()
-        wheel = Component("Pairs of Wheels", )
+        pedals = ExternalComponent("Pedals")
+        wheel = ExternalComponent("Pairs of Wheels")
+        gear = ExternalComponent("Gears")
+        brake = ExternalComponent("Brakes")
+        lights = ExternalComponent("Lights")
+        seats = ExternalComponent("Seats")
+        handlebar = ExternalComponent("Handlebar")
+        drink_holder = ExternalComponent("Drink Holder")
+        front_rack = ExternalComponent("Front Rack")
+        rear_rack = ExternalComponent("Rear Rack")
+        mudflaps = ExternalComponent("Mudflaps")
+        child_seat = ExternalComponent("Child Seat")
 
         # Using a lambda function to stop the button from executing during setup (because the function contains an
         # argument rather than just the method name and so it tries to execute)
-        btn_frame_assembly.clicked.connect(lambda: self.add_inhouse_component(self.bike_frame))
-        btn_fork_assembly.clicked.connect(lambda: self.add_inhouse_component(fork))
-        btn_front_fork_assembly.clicked.connect(lambda: self.add_inhouse_component(front_fork))
-        btn_painted_parts.clicked.connect(lambda: self.add_inhouse_component(painted_part))
-        btn_wheel_addition.clicked.connect(self.add_inhouse_component)
-        btn_gear_addition.clicked.connect(self.add_inhouse_component)
-        btn_brake_addition.clicked.connect(self.add_inhouse_component)
-        btn_light_addition.clicked.connect(self.add_inhouse_component)
-        btn_seat_addition.clicked.connect(self.add_inhouse_component)
-        btn_drink_holder_addition.clicked.connect(self.add_inhouse_component)
-        btn_front_rack_addition.clicked.connect(self.add_inhouse_component)
-        btn_rear_rack_addition.clicked.connect(self.add_inhouse_component)
-        btn_mudflaps_addition.clicked.connect(self.add_inhouse_component)
-        btn_child_seat_addition.clicked.connect(self.add_inhouse_component)
+        btn_frame_assembly.clicked.connect(lambda: self.add_internal_component(self.bike_frame, -1))
+        btn_fork_assembly.clicked.connect(lambda: self.add_internal_component(fork, -1))
+        btn_front_fork_assembly.clicked.connect(lambda: self.add_internal_component(front_fork, 0))
+        btn_painted_parts.clicked.connect(lambda: self.add_internal_component(painted_part, 1))
+        btn_pedal_addition.clicked.connect(lambda: self.add_external_component(pedals, 2))
+        btn_wheel_addition.clicked.connect(lambda: self.add_external_component(wheel, 3))
+        btn_gear_addition.clicked.connect(lambda: self.add_external_component(gear, 4))
+        btn_brake_addition.clicked.connect(lambda: self.add_external_component(brake, 5))
+        btn_light_addition.clicked.connect(lambda: self.add_external_component(lights, 6))
+        btn_seat_addition.clicked.connect(lambda: self.add_external_component(seats, 7))
+        btn_handlebar_addition.clicked.connect(lambda: self.add_external_component(handlebar, 8))
+        btn_drink_holder_addition.clicked.connect(lambda: self.add_external_component(drink_holder, 9))
+        btn_front_rack_addition.clicked.connect(lambda: self.add_external_component(front_rack, 10))
+        btn_rear_rack_addition.clicked.connect(lambda: self.add_external_component(rear_rack, 11))
+        btn_mudflaps_addition.clicked.connect(lambda: self.add_external_component(mudflaps, 12))
+        btn_child_seat_addition.clicked.connect(lambda: self.add_external_component(child_seat, 13))
+        btn_pass.clicked.connect(self.advance_turn) # doesn't need a lambda as there are no arguments being passed
+
+        # Adjust the colour of the button to indicate what work station is next (in green)
+        self.current_turn_index = 0
+        self.highlight_current_button()
 
         # Layout Setup
 
@@ -134,8 +169,9 @@ class MainWindow(QMainWindow):
         self.main_layout = QGridLayout()
         # - Assembly Line
         self.main_layout.addWidget(lbl_assembly_line, 0, 0)
-        self.main_layout.addWidget(lbl_bike_status, 17, 0)   # change
-        self.main_layout.addWidget(self.lbl_production, 18, 0)   # change
+        self.main_layout.addWidget(lbl_bike_status, 18, 0)   # change
+        self.main_layout.addWidget(self.lbl_production, 19, 0)   # change
+        self.main_layout.addWidget(self.lbl_production_bin_component_status, 6, 1)
         self.main_layout.addWidget(btn_frame_assembly, 1, 0)
         self.main_layout.addWidget(btn_fork_assembly, 2, 0)
         self.main_layout.addWidget(btn_front_fork_assembly, 4, 0)
@@ -146,11 +182,14 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(btn_brake_addition, 9, 0)
         self.main_layout.addWidget(btn_light_addition, 10, 0)
         self.main_layout.addWidget(btn_seat_addition, 11, 0)
-        self.main_layout.addWidget(btn_drink_holder_addition, 12, 0)
-        self.main_layout.addWidget(btn_front_rack_addition, 13, 0)
-        self.main_layout.addWidget(btn_rear_rack_addition, 14, 0)
-        self.main_layout.addWidget(btn_mudflaps_addition, 15, 0)
-        self.main_layout.addWidget(btn_child_seat_addition, 16, 0)
+        self.main_layout.addWidget(btn_handlebar_addition, 12, 0)
+        self.main_layout.addWidget(btn_drink_holder_addition, 13, 0)
+        self.main_layout.addWidget(btn_pass, 13, 1)
+        self.main_layout.addWidget(self.lbl_pass_btn_hint, 11, 1)
+        self.main_layout.addWidget(btn_front_rack_addition, 14, 0)
+        self.main_layout.addWidget(btn_rear_rack_addition, 15, 0)
+        self.main_layout.addWidget(btn_mudflaps_addition, 16, 0)
+        self.main_layout.addWidget(btn_child_seat_addition, 17, 0)
 
         #if self.production_table_view is not None:
          #   self.main_layout.addWidget(self.production_table_view, 1, 1, 8, 1)
@@ -171,6 +210,68 @@ class MainWindow(QMainWindow):
 
     def get_restock_list(self) -> list[str]:
         return self.restock_list
+
+    def get_assembly_line_buttons_precedence(self) -> dict[int, QPushButton]:
+        # Make an order of precedence from the assemblyline buttons
+        precedence: dict = {}
+        index: int = 0
+
+        # Remove the frame, fork and pass button
+        copy = self.assembly_line_buttons[3:]
+
+        for button in copy:
+            precedence[index] = button
+
+            index += 1
+
+        return precedence
+
+    def highlight_current_button(self) -> None:
+        precedences = self.get_assembly_line_buttons_precedence()
+        buttons = precedences.values()
+        too_many_component: list = []
+        internal_components = self.internal_component_mapping   # maps buttons to component string equivalent
+        production_bin = inventory.get_production_bin()
+
+        # Initially reset all buttons back to default. However, if they are an internally-produced component and their
+        # stock is over 3, the button will be made red but still usable to indicate overstock/overproducing.
+        for button in self.assembly_line_buttons:
+            button.setStyleSheet("")
+            button.setDisabled(False)
+
+            if button in internal_components.keys():
+                # If the stock is more than 3
+                if production_bin[internal_components[button]] > 3:
+                    too_many_component.append(self.internal_component_mapping[button])
+                    button.setStyleSheet("background-color: red; color: white")
+
+        # Additional information to the user to showcase internal components that are overstocked
+        if len(too_many_component) > 0:
+            self.lbl_production_bin_component_status.show()
+            self.lbl_production_bin_component_status.setText(
+                f"There are too many of the following components:"
+                f" {str(too_many_component).replace("'", "").replace("[", "").replace("]", "")}."
+                f" Please refrain from adding more until they have been used."
+            )
+        else:
+            self.lbl_production_bin_component_status.hide()
+
+        # Overwrite the button for the current turn
+        current_button = precedences[self.current_turn_index]
+        current_button.setStyleSheet("background-color: green; color: white")
+
+        # Set buttons after the index to non-interactable (the bin isn't up to them yet)
+        for precedence in precedences:
+            if precedence > self.current_turn_index:
+                precedences[precedence].setDisabled(True)
+
+    def advance_turn(self) -> None:
+        # Move to the next button; reset to 0 if at the end
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.get_assembly_line_buttons_precedence())
+        self.highlight_current_button()
+
+    def reset_turn(self) -> None:
+        self.current_turn_index = 0
 
     def add_restock(self, component: str) -> None:
         self.restock_list.append(component)
@@ -193,7 +294,7 @@ class MainWindow(QMainWindow):
 
         row = index.row()
 
-        component = self.inventory_model.data(self.inventory_model.index(row, 0))
+        component: str = self.inventory_model.data(self.inventory_model.index(row, 0))
 
         # If the component is not made in-house
         if component not in inventory.get_internal_components():
@@ -228,6 +329,38 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(self, "In-house Component",
                                     f"The {component} is made in-house and cannot be restocked.")
+
+    def on_produce_bike_cell_click(self, index) -> None:
+
+        row = index.row()
+        column = index.column()
+        produced_bike = False
+
+        can_produce_bike_column: int = self.production_model.columnCount() - 1
+        can_produce_bike_column_data: bool = self.production_model.data(self.production_model.index(row, column))
+
+        if column == can_produce_bike_column:
+            # If the column that checks whether the bike can be produced reads 'True'
+            if can_produce_bike_column_data is True:
+                self.produce_bike(index)
+                produced_bike = True
+
+        # The bike cannot be produced yet.
+        if produced_bike is False:
+            QMessageBox.critical(self, "Production Error",
+                                 "There are not enough required components in the production bin to make this bike.")
+
+    def produce_bike(self, index) -> None:
+        order_id = index.siblingAtColumn(0).data()
+        print(history.get_current_productions())
+
+        for bike in history.get_current_productions():
+            if bike.get_order_id() == order_id:
+                bike.produce_bike()
+                QMessageBox.information(self, "Production Success",
+                                        f"Bike Order ID {order_id} produced successfully.")
+        # update the model
+        self.update_models_views()
 
     def auto_restock(self) -> None:
         value, ok = QInputDialog.getInt(
@@ -284,24 +417,52 @@ class MainWindow(QMainWindow):
     def set_bike_frame(self, frame: Frame) -> None:
         self.bike_frame = frame
 
-    #def add_external_component(self, component: Component) -> None:
+    def add_external_component(self, external_component: ExternalComponent, index: int) -> None:
+        try:
+            external_component.add()
+        except ValueError as x:
+            QMessageBox.critical(self, "Invalid", str(x))
+            return
+        QMessageBox.information(self, "Component Added", f"1 {external_component} has been added to the Production Bin.")
 
-    def add_inhouse_component(self, component: Component) -> None:
+        # Update the model views
+        self.update_models_views()
+        self.highlight_current_button()
+
+        # Advance the button index
+        if self.current_turn_index == index:
+            self.advance_turn()
+        # else a prior workstation is producing more parts, which is how I have interpreted the requirement.
+
+    def add_internal_component(self, component: Component, index: int) -> None:
         try:
             component.create()
         except ValueError as x:
             QMessageBox.critical(self, "Invalid", str(x))
+            return
         QMessageBox.information(self, "Component Added", f"1 {component} has been added to the Production Bin.")
+
         # Update the model views
         self.update_models_views()
+        self.highlight_current_button()
+
+        # Advance the button index
+        if index >= 0:  # ignore the frame and forks
+            if self.current_turn_index == index:
+                self.advance_turn()
+
+        # else a prior workstation is producing more parts, which is how I have interpreted the requirement.
 
     def hide_assembly_line(self) -> None:
         for button in self.assembly_line_buttons:
             button.hide()
+        self.lbl_production_bin_component_status.hide()
+        self.lbl_pass_btn_hint.hide()
 
     def show_assembly_line(self) -> None:
         for button in self.assembly_line_buttons:
             button.show()
+            self.lbl_pass_btn_hint.hide()
 
     def check_production(self) -> None:
 
@@ -313,6 +474,10 @@ class MainWindow(QMainWindow):
 
             components_needed: list[list] = []
             all_components = [component for component in inventory.get_components_list()]
+
+            # Tubular steel is not included in the production bin (it is not directly added to the bike)
+            all_components.remove("Tubular Steel")
+
             column_headers = ["Order ID"] + all_components + ["Can Produce Bike?"]
             production_bin: dict = inventory.get_production_bin()
 
@@ -325,18 +490,21 @@ class MainWindow(QMainWindow):
                 for component in bike.get_components():
                     row[all_components.index(component)] = production_bin[component]
 
-                # Components that are strictly used to create other components or are created from existing components
-                indirect_components = ["Frames", "Forks", "Tubular Steel", "Painted Parts"]
+                # Components that are used to create other components or are created from existing components.
+                indirect_components = ["Frames", "Forks", "Painted Parts"]
 
                 # Add the indirect components to the row
                 for component in indirect_components:
                     row[all_components.index(component)] = production_bin[component]
 
                 components_needed.append([bike.get_order_id()] + row + [bike.can_produce_bike()])
+
             # If the production table view has not been initialised
             if self.production_table_view is None:
                 self.production_table_view = QTableView(self)
-                self.main_layout.addWidget(self.production_table_view, 18, 0, 8, 12)
+                self.main_layout.addWidget(self.production_table_view, 19, 0, 8, 12)
+                self.production_table_view.clicked.connect(self.on_produce_bike_cell_click)
+
                 assemblyline_custom_delegate = AssemblyLineCustomDelegate(self)
                 self.production_table_view.setItemDelegate(assemblyline_custom_delegate)
 
@@ -346,7 +514,6 @@ class MainWindow(QMainWindow):
                 self.production_table_view.resizeColumnsToContents()
 
             production_data = components_needed
-            print(f"all_components: {all_components}; column_headers: {column_headers}")
 
             self.production_model = CustomTableModel(production_data, column_headers)
             self.production_table_view.setModel(self.production_model)
@@ -358,11 +525,12 @@ class MainWindow(QMainWindow):
 
             # Hide the table view if it exists
             if self.production_table_view is not None:
-                self.production_table_view = QTableView(self)
+                self.production_table_view.hide()
+                # Reset the turn as it makes more sense for the production bin to be back at the start.
+                self.reset_turn()
 
     def update_models_views(self) -> None:
         self.check_production()
-        # Update the model to match the new stock
         self.inventory_model.update_data(
             [[component, stock] for component, stock in inventory.get_components_dict().items()]
         )
@@ -437,7 +605,9 @@ class AssemblyLineCustomDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         stock = index.data(Qt.ItemDataRole.DisplayRole)
 
-        if index.column() != 0:    # ignore the OrderID column
+        ignore_indexes = [0, 4, 5]
+        # ignore the OrderID column and other components that don't contribute directly to the bike
+        if index.column() not in ignore_indexes:
             # Change the colour of the cell depending on the quantity of stock
             if stock is None:
                 # Fill black, indicating that component is not used
@@ -451,6 +621,7 @@ class AssemblyLineCustomDelegate(QStyledItemDelegate):
 
         # Paint text for the quantity of stock
         painter.drawText(option.rect, str(stock))
+
 
 
 class OrderEntryWindow(QWidget):
@@ -787,6 +958,7 @@ class OrderEntryWindow(QWidget):
 
             except Exception as x:
                 QMessageBox.critical(self, "Error", str(x))
+                return
             # If successful
             QMessageBox.information(self, "Order Submitted", str(production))
 

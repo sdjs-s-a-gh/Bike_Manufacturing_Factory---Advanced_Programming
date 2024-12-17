@@ -1,7 +1,7 @@
 class Bike:
     # Class Variables (i.e. not instance-related), using a tuple to make them immutable
     possible_components: tuple = (
-            "Front Fork", "Handlebar", "Pedals", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"
+            "Front Fork", "Painted Parts", "Handlebar", "Pedals", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"
     )
     # A list of components that are fixed by class, and thus can not be changed by a user.
     # The first index of the inner list denotes the component; the second index informs what the setIndex of the combo
@@ -27,7 +27,7 @@ class Bike:
         is inheriting the method to check its own possible components rather than a separate list, such as the one
         below."""
         components_used = [
-            "Front Fork", "Handlebar", "Pedals", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"
+            "Front Fork", "Painted Parts", "Handlebar", "Pedals", "Pairs of Wheels", "Gears", "Brakes", "Lights", "Seats"
         ]
         return components_used
 
